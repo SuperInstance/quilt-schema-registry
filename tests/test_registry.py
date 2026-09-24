@@ -231,3 +231,38 @@ class TestFieldCompatibility(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# --- witness hash recipe (WITNESS_ID_V1) -----------------------------------
+
+def test_compute_witness_id_matches_conformance_vector():
+    from quilt_schema_registry import (compute_witness_id,
+                                       HASH_CONFORMANCE_ENVELOPE,
+                                       HASH_CONFORMANCE_VECTOR)
+    assert compute_witness_id(HASH_CONFORMANCE_ENVELOPE) == HASH_CONFORMANCE_VECTOR
+
+
+def test_witness_id_tamper_sensitive():
+    from quilt_schema_registry import (compute_witness_id,
+                                       HASH_CONFORMANCE_ENVELOPE)
+    env = dict(HASH_CONFORMANCE_ENVELOPE)
+    env["payload"] = {"note": "tampered"}
+    assert compute_witness_id(env) != compute_witness_id(HASH_CONFORMANCE_ENVELOPE)
+
+
+def test_witness_id_key_order_independent():
+    import json
+    from quilt_schema_registry import (compute_witness_id,
+                                       HASH_CONFORMANCE_ENVELOPE,
+                                       HASH_CONFORMANCE_VECTOR)
+    # a substrate that serialized keys in insertion order must reproduce the id
+    reordered = json.loads(json.dumps(HASH_CONFORMANCE_ENVELOPE),
+                           object_pairs_hook=lambda p: dict(reversed(p)))
+    assert compute_witness_id(reordered) == HASH_CONFORMANCE_VECTOR
+
+
+def test_hash_recipe_machine_readable():
+    from quilt_schema_registry import HASH_RECIPE
+    for k in ("algorithm", "canon", "input", "output", "recipe_version"):
+        assert k in HASH_RECIPE
+    assert HASH_RECIPE["algorithm"] == "sha256"

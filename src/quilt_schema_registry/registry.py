@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Any, Optional
 import hashlib
+import json
 
 
 # The canonical witness envelope — every substrate walker emits this shape.
@@ -254,3 +255,36 @@ def field_compatibility(receipt: dict) -> dict:
         "polarity_ok": pol_ok,
         "score": score,
     }
+
+
+# --- witness identity: the hash recipe -------------------------------------
+# Gap found by quilt-executor's witness bridge (use-driven): witness_id was
+# documented as "sha256-of-canonical" but the canonicalization was unspecified,
+# so two substrates could not reproduce each other's ids. This pins the recipe
+# in machine-readable form, RECEIPTS_V2 chart style.
+HASH_RECIPE = {
+    "algorithm": "sha256",
+    "canon": {"format": "json", "sort_keys": True, "separators": [",", ":"],
+              "ensure_ascii": False, "encoding": "utf-8"},
+    "input": "witness envelope dict (all 8 CANONICAL_FIELDS)",
+    "output": "hex64 lowercase, no 0x prefix",
+    "recipe_version": "WITNESS_ID_V1",
+}
+
+# Conformance vector (WITNESS_ID_V1): the envelope below hashes to this id.
+HASH_CONFORMANCE_ENVELOPE = {
+    "witness_id": "w000", "prev_witness_id": "", "polarity": "ACCEPT",
+    "substrate": "conformance", "cell_id": "cell-0", "status": "ok",
+    "timestamp": 1727000000,
+    "payload": {"note": "registry hash recipe conformance"},
+}
+HASH_CONFORMANCE_VECTOR = "3162a3b69719190275cbb0079c3bb1e2ace49c8ad2e3a575eb41f1d92e6ce83e"
+
+
+def compute_witness_id(envelope: dict) -> str:
+    """Reproducible witness identity per HASH_RECIPE (WITNESS_ID_V1)."""
+    spec = HASH_RECIPE["canon"]
+    blob = json.dumps(envelope, sort_keys=spec["sort_keys"],
+                      separators=tuple(spec["separators"]),
+                      ensure_ascii=spec["ensure_ascii"]).encode(spec["encoding"])
+    return hashlib.sha256(blob).hexdigest()
