@@ -25,6 +25,10 @@ Usage:
     ok, errors = validate_receipt(receipt_dict)
 """
 from .registry import (
+    HASH_RECIPE,
+    HASH_CONFORMANCE_ENVELOPE,
+    HASH_CONFORMANCE_VECTOR,
+    compute_witness_id,
     Schema,
     CANONICAL_ENVELOPE,
     CANONICAL_FIELDS,
@@ -41,6 +45,10 @@ from .registry import (
 
 __version__ = "0.1.0"
 __all__ = [
+    "HASH_RECIPE",
+    "HASH_CONFORMANCE_ENVELOPE",
+    "HASH_CONFORMANCE_VECTOR",
+    "compute_witness_id",
     "Schema",
     "CANONICAL_ENVELOPE",
     "CANONICAL_FIELDS",
